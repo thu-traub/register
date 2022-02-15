@@ -1,0 +1,85 @@
+﻿{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "registerserviceschema",
+    "title": "JSON shema for register service",
+    "type": "object",
+    "properties": {
+        "$schema": { "type": "string" },
+        "ldap" : { 
+            "type": "object",
+            "properties": {
+                "host": { "type": "string" },
+                "root": { "type": "string" },
+                "base": { "type": "string" },
+                "filter": { "type": "string" },
+                "displayName": { "type": "string" },
+                "cacert": { "type": "string" }
+            },
+            "additionalProperties": false,
+            "required": ["host", "base", "filter", "displayName"]
+        },
+        "authorize" : { 
+            "type": "object",
+            "properties": {
+                "recurse": { "type": "boolean" },
+                "member": { "type": "array" }
+            },
+            "additionalProperties": false,
+            "required": ["member"]
+        },
+        "commands" : { 
+            "type": "object",
+            "properties": {
+                "createUser": { "type": "array" },
+                "deleteUser": { "type": "array" },
+                "setPassword": { "type": "array" },
+                "Password": {
+                    "type": "string",
+                    "enum": ["generate", "copy"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["createUser", "deleteUser", "setPassword"]
+        },
+        "messages" : { 
+            "type": "object",
+            "properties": {
+                "welcome": { "type": "string" },
+                "unknownpassword": { "type": "string" },
+                "noaccount": { "type": "string" },
+                "accountfound": { "type": "string" },
+                "unauthorized": { "type": "string" },
+                "accountcreated": { "type": "string" },
+                "yourpassword":  { "type": "string" },
+                "accountremoved":  { "type": "string" },
+                "loginmessage":  { "type": "string" },
+                "select_exit":  { "type": "string" },
+                "select_password_reset": { "type": "string" },
+                "select_delete_account": { "type": "string" },
+                "please_select": { "type": "string" },
+                "bye": { "type": "string" },
+                "reset_confirm": { "type": "string" },
+                "delete_warning": { "type": "string" },
+                "yesno": { "type": "string" },
+                "account_generation": { "type": "string" },
+                "maybe_later": { "type": "string" },
+                "break": { "type": "string" },
+                "nothing": { "type": "string" },
+                "incorrect": { "type": "string" },
+                "failed": { "type": "string" }
+            },
+            "additionalProperties": false
+        },
+        "logging" : { 
+            "type": "object",
+            "properties": {
+                "level": { "type": "string" },
+                "file": { "type": "string" }
+            },
+            "additionalProperties": false,
+            "required": ["file"]
+        }
+    },
+    "additionalProperties": false,
+    "required": ["ldap", "commands"]
+}

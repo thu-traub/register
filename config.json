@@ -1,0 +1,25 @@
+{
+    "$schema": "./schema.json",
+    "ldap": {
+        "host": "ldaps://ldap.example.com",
+        "root": "dc=example,dc=com",
+        "base": "ou=someou,dc=example,dc=com",
+        "filter": "(&(objectClass=user)(sAMAccountName=$1))",
+        "displayName": "displayName",
+        "cacert": "root.crt"
+    },
+    "authorize": {
+        "recurse": true,
+        "member": ["CN=...LDAP-Group-Name..."]
+    },
+    "commands": {
+        "createUser": ["sudo adduser $1 --gecos \"$2\" --quiet --disabled-login"],
+        "deleteUser": ["sudo deluser $1 --remove-home"],
+        "setPassword": ["echo $1:$2 | sudo chpasswd"],
+        "Password": "generate"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "/var/log/register/register.log"
+    }
+}

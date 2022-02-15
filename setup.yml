@@ -1,0 +1,86 @@
+---
+- hosts: all
+  vars:
+    admin: "admins_users_name"
+    regpassword: "password_for_register"
+    rootCert: "root_cert"
+
+  become: true
+  tasks:
+  - name: Install packages
+    apt: name={{item}} state=present
+    with_items:
+      - python3.8
+      - python3-pip
+      - python3.8-dev
+      - libsasl2-dev
+      - libldap2-dev
+      - libssl-dev
+
+  - name: "Create register account"
+    user:
+      name: "register"
+      shell: "/usr/local/bin/register/register.py"
+      password: "{{ regpassword | password_hash('sha512') }}"
+      update_password: "on_create"
+      state: present
+
+  - name: "passwordless sudo"
+    lineinfile:
+      path: /etc/sudoers
+      line: 'register ALL=(ALL) NOPASSWD:ALL'
+      create: no
+
+  - name: "Install root certificate"
+    copy:
+      src: "{{ rootCert }}"
+      dest: "/usr/local/share/ca-certificates"
+    register: cert
+
+  - name: "Update CA store"
+    command:
+      cmd: update-ca-certificates
+    when: cert.changed
+
+  - name: "Check for Python LDAP"
+    shell: "python3.8 -m pip list | grep ldap"
+    register: checkldap
+    failed_when: checkldap.rc > 1
+    changed_when: false
+
+  - name: "Install Python LDAP"
+    command:
+      cmd: "sudo -H python3.8 -m pip install python_ldap"
+    when:
+      checkldap.rc!=0
+
+  - name: "Create script directory"
+    file:
+      path: "/usr/local/bin/register"
+      state: directory
+      owner: "register"
+      group: "{{ admin }}"
+  
+  - name: "Create log directory"
+    file:
+      path: "/var/log/register"
+      state: directory
+      owner: "register"
+      group: "{{ admin }}"
+
+  - name: "Copy register script config"
+    copy:
+      src: "{{ item }}"
+      dest: "/usr/local/bin/register"
+      owner: "register"
+      group: "{{ admin }}"
+    with_fileglob:
+      - "script/*.json"
+
+  - name: "Copy register script config"
+    copy:
+      src: "script/register.py"
+      dest: "/usr/local/bin/register/register.py"
+      owner: "register"
+      group: "{{ admin }}"
+      mode: 0770

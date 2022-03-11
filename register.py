@@ -2,7 +2,7 @@
 # =============================================================================
 #
 #   register.py
-#   Version 1.0
+#   Version 1.1
 #
 #   Linux self service account creation
 #
@@ -42,6 +42,7 @@ M_NOACCOUNT = M+"noaccount"
 M_ACCOUNT_FOUND = M+"accountfound"
 M_UNAUTHORIZED = M+"unauthorized"
 M_ACCOUNT_CREATED = M+"accountcreated"
+M_ASK_PASSWORD = M+"askpass"
 M_YOUR_PASSWORD = M+"yourpassword"
 M_ACCOUNT_REMOVED = M+"accountremoved"
 M_LOGIN_MESSAGE = M+"loginmessage"
@@ -78,12 +79,18 @@ msgdefaults = {
     "Your account is valid but you are not authorized!",
 
     M_ACCOUNT_CREATED:
-    "You can now connect here with: ssh $1@$2\n"
-    "Have fun!",
+    "\nYou can now connect here with: ssh $1@$2\n"
+    "Have fun!\n",
 
     M_YOUR_PASSWORD:
     "Your generated password is: $1\n"
-    "Please remeber the password, I won't tell you twice",
+    "Please remeber the password, I won't tell you twice\n",
+
+    M_ASK_PASSWORD:
+    "\nDo you want a random password?\n"
+    "If you answer with no, your regular password will be\n"
+    "used to generate the unix passsword hash.\n"
+    "In any case, the password ist not stored in clear text.\n",
 
     M_ACCOUNT_REMOVED:
     "Your account has been removed",
@@ -294,11 +301,7 @@ def run(cmd, cmdlog):
 
 def set_password(user, passwd):
     """ set the users password """
-
-    if conf("commands.Password", "copy") == "generate":
-        passwd = secrets.token_urlsafe(16)
-        print(conf(M_YOUR_PASSWORD).replace("$1", passwd))
-
+    
     # execute all commands from config file
     for rcmd in conf("commands.setPassword"):
         cmdlog = rcmd.replace("$1", user).replace("$2", "*****")
@@ -308,7 +311,6 @@ def set_password(user, passwd):
 
 # -----------------------------------------------------------------------------
 
-
 def create_user(user, gcos):
     """ create the user account """
 
@@ -316,10 +318,6 @@ def create_user(user, gcos):
     for rcmd in conf("commands.createUser"):
         cmd = rcmd.replace("$1", user).replace("$2", gcos)
         run(cmd, cmd)
-        print(conf(M_ACCOUNT_CREATED).replace(
-            "$1", user).replace(
-            "$2", socket.getfqdn()))
-
 
 # -----------------------------------------------------------------------------
 
@@ -335,6 +333,20 @@ def delete_user(user):
 
 # -----------------------------------------------------------------------------
 
+def get_passwd(passwd):
+
+    agen = False
+    if conf("commands.Password", "copy") == "ask":
+        print(conf(M_ASK_PASSWORD))
+        cf = input(conf(M_YESNO)+": ")[0:1]
+        agen = cf == conf(M_YESNO)[0]
+
+    if conf("commands.Password", "copy") == "generate" or agen:
+        passwd = secrets.token_urlsafe(16)
+        print(conf(M_YOUR_PASSWORD).replace("$1", passwd))
+    return passwd
+
+# -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
 
@@ -404,7 +416,7 @@ if __name__ == '__main__':
             elif selection == "1":
                 if conf("commands.Password", "copy") == "copy":
                     print(conf(M_RESET_CONFIRM))
-                set_password(user, passwd)
+                set_password(user, get_passwd(passwd))
 
             elif selection == "2":
                 print(conf(M_DELETE_WARNING))
@@ -424,10 +436,16 @@ if __name__ == '__main__':
             # read yes or no
             selection = input(conf(M_YESNO)+": ")[0:1]
             if selection == conf(M_YESNO)[0]:
+
                 # if yes, generate the account and set the password
-                create_user(user, displayname)
-                set_password(user, passwd)
                 print(conf(M_ACCOUNT_GENERATION))
+                create_user(user, displayname)
+               
+                set_password(user, get_passwd(passwd))
+                print(conf(M_ACCOUNT_CREATED).replace(
+                    "$1", user).replace(
+                    "$2", socket.getfqdn()))
+
             else:
                 print(conf(M_MAYBE_LATER))
 

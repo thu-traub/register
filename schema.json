@@ -35,7 +35,7 @@
                 "setPassword": { "type": "array" },
                 "Password": {
                     "type": "string",
-                    "enum": ["generate", "copy"]
+                    "enum": ["generate", "copy", "ask"]
                 }
             },
             "additionalProperties": false,
